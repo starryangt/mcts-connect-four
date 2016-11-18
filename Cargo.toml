@@ -1,0 +1,6 @@
+[package]
+name = "connect_three"
+version = "0.1.0"
+authors = ["a person <tehflyingjam@gmail.com>"]
+
+[dependencies]
