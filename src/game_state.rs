@@ -3,11 +3,12 @@ const BOARD_HEIGHT : usize = 3;
 
 #[derive(Debug, Copy, Clone)]
 pub struct GameState{
-    board : [[i32; BOARD_WIDTH]; BOARD_HEIGHT]
+    board : [[Color; BOARD_WIDTH]; BOARD_HEIGHT]
 }
 
-#[derive(Debug, Copy, Clone)]
-enum Color {
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum Color {
+    Empty,
     White,
     Black,
 }
@@ -19,16 +20,30 @@ pub struct Move {
     y: usize
 }
 
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum End{
+    Ongoing,
+    Victory(Color),
+}
+
 impl Move{
-    pub fn new(nx : usize, ny : usize) -> Self{
+    pub fn new(nx : usize, ny : usize, ncolor : Color) -> Self{
         Move{
-            color : Color::White,
+            color : ncolor,
             x: nx,
             y: ny
         }
     }
 
-    pub fn from_int(nx : i32, ny : i32) -> Self{
+    pub fn white_new(nx : usize, ny : usize) -> Self{
+        Move::new(nx, ny, Color::White) 
+    }
+
+    pub fn black_new(nx : usize, ny : usize) -> Self{
+        Move::new(nx, ny, Color::Black)
+    }
+
+    pub fn from_int(nx : i32, ny : i32, ncolor : Color) -> Self{
         Move{
             color : Color::White,
             x : nx as usize,
@@ -44,15 +59,15 @@ impl Move{
 impl GameState{
     pub fn new() -> Self{
         GameState{ 
-            board: [[0, 0, 0],
-                    [0, 0, 0],
-                    [0, 0, 0]]
+            board: [[Color::Empty, Color::Empty, Color::Empty],
+                    [Color::Empty, Color::Empty, Color::Empty],
+                    [Color::Empty, Color::Empty, Color::Empty]]
         }
     }
 
     pub fn place(&self, game_move : Move) -> Self{
         let mut copy = self.clone();
-        copy.board[game_move.x][game_move.y] = 1;
+        copy.board[game_move.x][game_move.y] = game_move.color;
         return copy;
     }
 
@@ -62,7 +77,7 @@ impl GameState{
         }
 
         let tile = self.board[game_move.x][game_move.y];
-        if tile > 0{
+        if tile != Color::Empty{
             return false;
         }
         else{
@@ -70,11 +85,11 @@ impl GameState{
         }
     }
 
-    pub fn legal_moves(&self) -> Vec<Move>{
+    pub fn legal_moves(&self, color : Color) -> Vec<Move>{
         let mut moves = Vec::new();
         for y in 0..BOARD_HEIGHT{
             for x in 0..BOARD_WIDTH{
-                let potential_move = Move::new(x, y);
+                let potential_move = Move::new(x, y, color);
                 if self.legal(potential_move){
                     moves.push(potential_move);
                 }
@@ -83,11 +98,50 @@ impl GameState{
         return moves;
     }
 
-    fn linear_match(x : i32, y : i32, stepX : i32, stepY : i32){
-
+    pub fn linear_match(&self, stepX : i32, stepY : i32, color : Color) -> bool{
+        for i in 1..3{
+            let x = (i * stepX) as usize;
+            let y = (i * stepY) as usize;
+            let value = self.board[x][y];
+            println!("Im checking {} and {}", x, y);
+            if value != color{
+                return false
+            }
+        }
+        return true;
     }
 
-    pub fn win(&self) -> bool{
-        unimplemented!()
+    pub fn win(&self) -> End{
+        if self.linear_match(1, 0, Color::White) 
+            || self.linear_match(0, 1, Color::White)
+            || self.linear_match(1, 1, Color::White){
+                return End::Victory(Color::White);
+            }
+        if self.linear_match(1, 0, Color::Black) 
+            || self.linear_match(0, 1, Color::Black)
+            || self.linear_match(1, 1, Color::Black){
+                return End::Victory(Color::Black)
+            }
+
+         return End::Ongoing;
+    }
+
+    pub fn print(&self) -> String{
+        let mut string = String::from("\n");
+        for column in self.board.iter(){
+            for tile in column{
+                string.push_str("|");
+                let tile_str =
+                    match tile {
+                        &Color::Empty => " ",
+                        &Color::White => "O",
+                        &Color::Black => "X"
+                    };
+                string.push_str(tile_str);
+                string.push_str("|")
+            }
+            string.push_str("\n");
+        }
+        return string;
     }
 }
