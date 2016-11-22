@@ -1,11 +1,21 @@
 pub mod game_state;
+pub mod monte_carlo;
+extern crate rand;
+extern crate petgraph;
+use std::io;
+use petgraph::Graph;
 
 fn main() {
     let mut board = game_state::GameState::new();
-    board = board.place(game_state::Move::new(0, 0, game_state::Color::White));
-    board = board.place(game_state::Move::new(1, 0, game_state::Color::White));
-    board = board.place(game_state::Move::new(2, 0, game_state::Color::White));
-    let end = board.win();
+    board = board.place(&game_state::Move::white_new(0, 0));
+    board = board.place(&game_state::Move::black_new(2, 2));
+    board = board.place(&game_state::Move::white_new(2, 0));
+    board = board.place(&game_state::Move::black_new(1, 2));
     println!("{}", board.print());
-    println!("{:?}", end)
+    monte_carlo::tree_search(board);
+    println!("Done");
+}
+
+fn play(){
+
 }
