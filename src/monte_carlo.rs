@@ -8,19 +8,21 @@ use std::collections::HashMap;
 #[derive(Debug, Copy, Clone)]
 pub struct UCTData{
     pub wins : f64,
-    pub num_plays : i32
+    pub num_plays : i32,
+    pub win_tie : i32
 }
 
 impl UCTData{
     fn new(w : f64, n : i32) -> UCTData{
         UCTData{
             wins : w,
-            num_plays : n
+            num_plays : n,
+            win_tie : 0
         }
     }
 
     fn win_percentage(&self) -> f64{
-        (self.wins / self.num_plays as f64)
+        (self.win_tie as f64 / self.num_plays as f64)
     }
 }
 
@@ -89,6 +91,21 @@ fn get_result_value(result : game_state::End, player : game_state::Color) -> f64
     }
 }
 
+fn get_tie_or_win(result : game_state::End, player : game_state::Color) -> i32{
+    match result{
+        game_state::End::Tie => 1,
+        game_state::End::Victory(color) =>{
+            if color == player{
+                1
+            }
+            else{
+                0
+            }
+        },
+        _ => 0
+    }
+}
+
 fn state_previous_player(state : &game_state::GameState) -> game_state::Color{
     //helper function because 
     match state.player{
@@ -115,8 +132,10 @@ pub fn tree_search(root : game_state::GameState) -> game_state::Move{
         let selected_state = tree_policy(&current_state, &visited_states, &statistics);
 
         //expand
-        statistics.insert(selected_state.expanded_node, UCTData::new(0f64, 0));
-        visited_states.insert(selected_state.expanded_node);
+        if !visited_states.contains(&selected_state.expanded_node){
+            statistics.insert(selected_state.expanded_node, UCTData::new(0f64, 0));
+            visited_states.insert(selected_state.expanded_node);
+        }
 
         //simulate
         let result = run_simulation(selected_state.expanded_node, root.player);
@@ -128,7 +147,7 @@ pub fn tree_search(root : game_state::GameState) -> game_state::Move{
     let possible_moves = root.legal_moves(root.player).into_iter().map(|x| (x, statistics.get(&root.place(&x)).unwrap())).collect::<Vec<_>>();
     let best_move = optimal_move_most_visisted(&possible_moves);
     let data = statistics.get(&root.place(&best_move)).unwrap();
-    println!("Puny human, I have thought through {} variations of this pitiful game, and won in {}% of them", data.num_plays, data.win_percentage() * 100f64);
+    println!("Puny human, I have thought through {} variations of this pitiful game, and won or tied in {}% of them", data.num_plays, data.win_percentage() * 100f64);
     return best_move;
     //let possible_states = possible_moves.into_iter().map(|x| root.place(&x)).map(|y| (y, statistics.get(&y).unwrap())).collect::<Vec<_>>();
 }
@@ -230,6 +249,7 @@ pub fn back_propogate(win_value : game_state::End, stats : &mut HashMap<game_sta
                 Some(ref mut stat) =>{
                     stat.wins += get_result_value(win_value, state_previous_player(&node));
                     stat.num_plays += 1;
+                    stat.win_tie += get_tie_or_win(win_value, state_previous_player(&node));
                 }
                 None => ()
             }
