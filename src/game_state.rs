@@ -173,8 +173,8 @@ impl GameState{
                 let tile_str =
                     match tile {
                         &Color::Empty => " ",
-                        &Color::White => "O",
-                        &Color::Black => "X"
+                        &Color::White => "X",
+                        &Color::Black => "O"
                     };
                 string.push_str(tile_str);
                 string.push_str("|")

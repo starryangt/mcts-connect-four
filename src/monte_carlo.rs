@@ -57,7 +57,7 @@ pub fn choose_random(possible_moves : &Vec<game_state::Move>) -> game_state::Mov
     return random_move;
 }
 
-pub fn run_simulation(state : game_state::GameState, player : game_state::Color) -> f64{ 
+pub fn run_simulation(state : game_state::GameState, player : game_state::Color) -> game_state::End{ 
 
     let mut current_state = state;
     while !victory(current_state.win()){
@@ -70,17 +70,31 @@ pub fn run_simulation(state : game_state::GameState, player : game_state::Color)
         current_state = current_state.place(&random_move);
     }
 
-    match current_state.win(){
-        game_state::End::Ongoing => 0f64,
+    current_state.win()
+
+}
+
+fn get_result_value(result : game_state::End, player : game_state::Color) -> f64{
+    match result{
         game_state::End::Tie => 0.5f64,
-        game_state::End::Victory(color) => {
+        game_state::End::Victory(color) =>{
             if color == player{
                 1f64
             }
             else{
                 0f64
             }
-        }
+        },
+        _ => 0f64
+    }
+}
+
+fn state_previous_player(state : &game_state::GameState) -> game_state::Color{
+    //helper function because 
+    match state.player{
+        game_state::Color::White => game_state::Color::Black,
+        game_state::Color::Black => game_state::Color::White,
+        _ => game_state::Color::White
     }
 }
 
@@ -94,7 +108,7 @@ pub fn tree_search(root : game_state::GameState) -> game_state::Move{
 
     let current_time = time::precise_time_s();
     //temp
-    while time::precise_time_s() - current_time < 0.5{
+    while time::precise_time_s() - current_time < 0.5f64{
         let current_state = root;
 
         //selection
@@ -112,19 +126,37 @@ pub fn tree_search(root : game_state::GameState) -> game_state::Move{
     }
 
     let possible_moves = root.legal_moves(root.player).into_iter().map(|x| (x, statistics.get(&root.place(&x)).unwrap())).collect::<Vec<_>>();
+    let best_move = optimal_move_most_visisted(&possible_moves);
+    let data = statistics.get(&root.place(&best_move)).unwrap();
+    println!("Puny human, I have thought through {} variations of this pitiful game, and won in {}% of them", data.num_plays, data.win_percentage() * 100f64);
+    return best_move;
+    //let possible_states = possible_moves.into_iter().map(|x| root.place(&x)).map(|y| (y, statistics.get(&y).unwrap())).collect::<Vec<_>>();
+}
+
+fn optimal_move_highest_win(possible_moves : &Vec<(game_state::Move, &UCTData)>) -> game_state::Move{
+    let mut highest_win = 0f64;
+    let mut best_move = game_state::Move::white_new(0, 0);
+    for &(mv, data) in possible_moves{
+        if data.wins > highest_win{
+            highest_win = data.wins;
+            best_move = mv;
+        }
+    }
+    return best_move;
+}
+
+fn optimal_move_most_visisted(possible_moves : &Vec<(game_state::Move, &UCTData)>) -> game_state::Move{
     let mut most_played = 0;
     let mut best_move = game_state::Move::white_new(0, 0);
-    for (mv, data) in possible_moves{
+    for &(mv, data) in possible_moves{
         if data.num_plays > most_played{
             most_played = data.num_plays;
             best_move = mv;
         }
     }
-    let data = statistics.get(&root.place(&best_move)).unwrap();
-    println!("Puny human, the move I have chosen has won in {} of my simulations", data.win_percentage());
     return best_move;
-    //let possible_states = possible_moves.into_iter().map(|x| root.place(&x)).map(|y| (y, statistics.get(&y).unwrap())).collect::<Vec<_>>();
 }
+
 
 
 pub fn tree_policy(
@@ -144,10 +176,11 @@ pub fn tree_policy(
 
         let possible_moves = current_node.legal_moves(current_node.player);
 
-        if possible_moves.len() < 1{
-            //no legal moves
+        if possible_moves.len() < 1 || victory(current_node.win()){
+            //no legal moves or game ends
             return TreePolicyResult::new(path, current_node);
         }
+        
         //has every possible move been explored?
         let fully_explored = possible_moves.iter().fold(true, 
             |acc, x| 
@@ -189,12 +222,13 @@ pub fn tree_policy(
     }
 }
 
-pub fn back_propogate(win_value : f64, stats : &mut HashMap<game_state::GameState, UCTData>,
+
+pub fn back_propogate(win_value : game_state::End, stats : &mut HashMap<game_state::GameState, UCTData>,
     path : &Vec<game_state::GameState>){
         for node in path.iter(){
             match stats.get_mut(node){
                 Some(ref mut stat) =>{
-                    stat.wins += win_value;
+                    stat.wins += get_result_value(win_value, state_previous_player(&node));
                     stat.num_plays += 1;
                 }
                 None => ()
