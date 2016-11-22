@@ -1,6 +1,7 @@
 use game_state;
 use std;
 use rand;
+use time;
 use std::collections::HashSet;
 use std::collections::HashMap;
 
@@ -91,8 +92,9 @@ pub fn tree_search(root : game_state::GameState) -> game_state::Move{
     let mut statistics : HashMap<game_state::GameState, UCTData> = HashMap::new();
     statistics.insert(root, UCTData::new(0f64, 0));
 
+    let current_time = time::precise_time_s();
     //temp
-    for i in 0..6000{
+    while time::precise_time_s() - current_time < 0.5{
         let current_state = root;
 
         //selection

@@ -1,6 +1,7 @@
 pub mod game_state;
 pub mod monte_carlo;
 extern crate rand;
+extern crate time;
 use std::io;
 
 fn main() {
