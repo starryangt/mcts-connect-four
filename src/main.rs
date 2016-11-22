@@ -21,7 +21,6 @@ fn play(){
         board = board.place(&mv);
         print_board(&board);
         let best_move = monte_carlo::tree_search(board);
-        board = board.place(&best_move);
     }
     print_board(&board);
     println!("Result: {:?}", board.win());
