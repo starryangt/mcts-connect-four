@@ -5,10 +5,11 @@ extern crate time;
 use std::io;
 
 fn main() {
-    play();
+    //play();
 }
 
 fn play(){
+    /*
     let mut board = game_state::GameState::new();
     while !monte_carlo::victory(board.win()){
         print_board(&board);
@@ -24,6 +25,7 @@ fn play(){
     }
     print_board(&board);
     println!("Result: {:?}", board.win());
+    */
 }
 
 fn print_board(board : &game_state::GameState){

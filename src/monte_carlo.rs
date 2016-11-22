@@ -161,7 +161,7 @@ pub fn tree_search(root : game_state::GameState) -> game_state::Move{
 fn optimal_move_highest_win(possible_moves : &Vec<(game_state::Move, &UCTData)>) -> game_state::Move{
     //selects the highest winning node as optimal
     let mut highest_win = 0f64;
-    let mut best_move = game_state::Move::white_new(0, 0);
+    let mut best_move = game_state::Move::white_new(0);
     for &(mv, data) in possible_moves{
         if data.wins > highest_win{
             highest_win = data.wins;
@@ -174,7 +174,7 @@ fn optimal_move_highest_win(possible_moves : &Vec<(game_state::Move, &UCTData)>)
 fn optimal_move_most_visisted(possible_moves : &Vec<(game_state::Move, &UCTData)>) -> game_state::Move{
     //selects the most visited node as optimal
     let mut most_played = 0;
-    let mut best_move = game_state::Move::white_new(0, 0);
+    let mut best_move = game_state::Move::white_new(0);
     for &(mv, data) in possible_moves{
         if data.num_plays > most_played{
             most_played = data.num_plays;
