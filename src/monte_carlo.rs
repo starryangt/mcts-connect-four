@@ -101,7 +101,7 @@ pub fn tree_search(root : game_state::GameState) -> game_state::Move{
     //get possible child states
 
     //temp
-    for i in 0..3000{
+    for i in 0..6000{
         let current_state = root;
 
         //selection
