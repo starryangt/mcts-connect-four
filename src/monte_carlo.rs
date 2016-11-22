@@ -7,6 +7,8 @@ use std::collections::HashMap;
 
 #[derive(Debug, Copy, Clone)]
 pub struct UCTData{
+    //represents data used by UCB1 to choose the best choice to explored
+    //the win-tie field is for better statistics, not actually used
     pub wins : f64,
     pub num_plays : i32,
     pub win_tie : i32
@@ -42,10 +44,12 @@ impl TreePolicyResult{
 }
 
 fn ucb1(win_value : f64, number_played : f64, total_played : f64) -> f64{
+    //weighs exploration and expected output
     ((2f64 * total_played.ln()) / number_played).sqrt() + win_value / number_played
 }
 
 pub fn victory(end : game_state::End) -> bool{
+    //simple helper function
     match end{
         game_state::End::Victory(_) => true,
         game_state::End::Tie => true,
@@ -60,7 +64,7 @@ pub fn choose_random(possible_moves : &Vec<game_state::Move>) -> game_state::Mov
 }
 
 pub fn run_simulation(state : game_state::GameState, player : game_state::Color) -> game_state::End{ 
-
+    //from a given state, it will continue to choose random legitimate options until one player wins or ties
     let mut current_state = state;
     while !victory(current_state.win()){
         let current_player = current_state.player;
@@ -73,10 +77,11 @@ pub fn run_simulation(state : game_state::GameState, player : game_state::Color)
     }
 
     current_state.win()
-
 }
 
 fn get_result_value(result : game_state::End, player : game_state::Color) -> f64{
+    //returns the "reward" of each multi-armed bandit
+    //a tie is better than a loss, but not as good as a win
     match result{
         game_state::End::Tie => 0.5f64,
         game_state::End::Victory(color) =>{
@@ -92,6 +97,7 @@ fn get_result_value(result : game_state::End, player : game_state::Color) -> f64
 }
 
 fn get_tie_or_win(result : game_state::End, player : game_state::Color) -> i32{
+    //same function, but ties are also one. for the tie-win statistic
     match result{
         game_state::End::Tie => 1,
         game_state::End::Victory(color) =>{
@@ -107,7 +113,8 @@ fn get_tie_or_win(result : game_state::End, player : game_state::Color) -> i32{
 }
 
 fn state_previous_player(state : &game_state::GameState) -> game_state::Color{
-    //helper function because 
+    //helper function
+    //the board member player represents the player who goes next
     match state.player{
         game_state::Color::White => game_state::Color::Black,
         game_state::Color::Black => game_state::Color::White,
@@ -149,10 +156,10 @@ pub fn tree_search(root : game_state::GameState) -> game_state::Move{
     let data = statistics.get(&root.place(&best_move)).unwrap();
     println!("Puny human, I have thought through {} variations of this pitiful game, and won or tied in {}% of them", data.num_plays, data.win_percentage() * 100f64);
     return best_move;
-    //let possible_states = possible_moves.into_iter().map(|x| root.place(&x)).map(|y| (y, statistics.get(&y).unwrap())).collect::<Vec<_>>();
 }
 
 fn optimal_move_highest_win(possible_moves : &Vec<(game_state::Move, &UCTData)>) -> game_state::Move{
+    //selects the highest winning node as optimal
     let mut highest_win = 0f64;
     let mut best_move = game_state::Move::white_new(0, 0);
     for &(mv, data) in possible_moves{
@@ -165,6 +172,7 @@ fn optimal_move_highest_win(possible_moves : &Vec<(game_state::Move, &UCTData)>)
 }
 
 fn optimal_move_most_visisted(possible_moves : &Vec<(game_state::Move, &UCTData)>) -> game_state::Move{
+    //selects the most visited node as optimal
     let mut most_played = 0;
     let mut best_move = game_state::Move::white_new(0, 0);
     for &(mv, data) in possible_moves{
@@ -183,12 +191,13 @@ pub fn tree_policy(
     visisted_states : &HashSet<game_state::GameState>,
     stats : &HashMap<game_state::GameState, UCTData>
     ) -> TreePolicyResult{
-    //selects a node to simulate
     
     //represents the states we went through to get to the selected node
+    //used for backpropogation without an actual tree structure
     let mut path : Vec<game_state::GameState> = Vec::new();
 
     let mut current_node = current_state.clone();
+
     loop{
 
         path.push(current_node);
@@ -206,8 +215,10 @@ pub fn tree_policy(
             acc && visisted_states.contains(&current_node.place(x))
         );
 
-        //exploration
+        //if not, exploration
         if !fully_explored {
+            //for a node with number played of 0, ucb1 returns infinity
+            //in other words unexplored child nodes are always explored at least once
             let not_explored = possible_moves.into_iter().filter(
                 |x| !visisted_states.contains(&current_node.place(x))
                 ).collect::<Vec<_>>();
@@ -218,8 +229,7 @@ pub fn tree_policy(
             return result; 
         }
 
-        //fully explored, so pick a random one and continue
-        //would use UCT 
+        //all child nodes have been simulated at least once, so use ucb1 to select best
         else{
             //sort 
             let mut best_move = possible_moves.last().unwrap();
