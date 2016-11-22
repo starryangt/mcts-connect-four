@@ -44,7 +44,7 @@ fn test(){
 }
 
 fn ucb1(win_value : f64, number_played : f64, total_played : f64) -> f64{
-    ((f64::from(2) * total_played.ln()) / number_played).sqrt() + win_value / number_played
+    ((2f64 * total_played.ln()) / number_played).sqrt() + win_value / number_played
 }
 
 fn victory(end : game_state::End) -> bool{
@@ -172,13 +172,21 @@ pub fn tree_policy(
         //would use UCT 
         else{
             //sort 
-            let mut best_move = possible_moves.last();
-            let mut best_UCT = 0;
+            let mut best_move = possible_moves.last().unwrap();
+            let mut best_UCT = 0f64;
+            let total_played = stats.get(&current_state).unwrap().num_plays;
             for possibility in possible_moves.iter(){
+                
+                //TODO: switch to pattern matching
+                let data = stats.get(&current_node.place(&possibility)).unwrap();
+                let uct = ucb1(data.wins, data.num_plays as f64, total_played as f64);
+                if(uct > best_UCT){
+                    best_UCT = uct;
+                    best_move = possibility;
+                }
             }
-             let random_choice = choose_random(&mut rng, &possible_moves);
-             let chosen_node = current_node.place(&random_choice);
-             current_node = chosen_node;
+            let chosen_node = current_node.place(&best_move);
+            current_node = chosen_node;
         }
     }
 }
