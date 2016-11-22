@@ -6,16 +6,28 @@ use std::io;
 use petgraph::Graph;
 
 fn main() {
-    let mut board = game_state::GameState::new();
-    board = board.place(&game_state::Move::white_new(0, 0));
-    board = board.place(&game_state::Move::black_new(2, 2));
-    board = board.place(&game_state::Move::white_new(2, 0));
-    board = board.place(&game_state::Move::black_new(1, 2));
-    println!("{}", board.print());
-    monte_carlo::tree_search(board);
-    println!("Done");
+    play();
 }
 
 fn play(){
+    let mut board = game_state::GameState::new();
+    while !monte_carlo::victory(board.win()){
+        print_board(&board);
+        let mut input = String::new();
+        io::stdin().read_line(&mut input).expect("rip");
+        let v: Vec<usize> = input.split(',').map(|x| x.trim().parse::<usize>().unwrap()).collect();
+        let x = v[0];
+        let y = v[1];
+        let mv = game_state::Move::white_new(x, y);
+        board = board.place(&mv);
+        print_board(&board);
+        let best_move = monte_carlo::tree_search(board);
+        board = board.place(&best_move);
+    }
+    print_board(&board);
+    println!("Result: {:?}", board.win());
+}
 
+fn print_board(board : &game_state::GameState){
+    println!("{}", board.print());
 }
