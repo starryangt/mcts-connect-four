@@ -1,9 +1,7 @@
 pub mod game_state;
 pub mod monte_carlo;
 extern crate rand;
-extern crate petgraph;
 use std::io;
-use petgraph::Graph;
 
 fn main() {
     play();

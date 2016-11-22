@@ -145,10 +145,10 @@ impl GameState{
     }
 
     pub fn win(&self) -> End{
-        if(self.color_win(Color::White)){
+        if self.color_win(Color::White) {
             return End::Victory(Color::White);
         }
-        if(self.color_win(Color::Black)){
+        if self.color_win(Color::Black) {
             return End::Victory(Color::Black);
         }
         let mut no_empty = true;

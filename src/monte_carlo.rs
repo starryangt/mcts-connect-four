@@ -1,7 +1,6 @@
 use game_state;
 use std;
 use rand;
-use rand::Rng;
 use std::collections::HashSet;
 use std::collections::HashMap;
 
@@ -39,10 +38,6 @@ impl TreePolicyResult{
     }
 }
 
-fn test(){
-    //println!("ass");
-}
-
 fn ucb1(win_value : f64, number_played : f64, total_played : f64) -> f64{
     ((2f64 * total_played.ln()) / number_played).sqrt() + win_value / number_played
 }
@@ -61,17 +56,16 @@ pub fn choose_random(possible_moves : &Vec<game_state::Move>) -> game_state::Mov
     return random_move;
 }
 
-pub fn run_simulation(rng : &mut rand::ThreadRng ,state : game_state::GameState, player : game_state::Color) -> f64{ 
+pub fn run_simulation(state : game_state::GameState, player : game_state::Color) -> f64{ 
 
     let mut current_state = state;
-    while (!victory(current_state.win())){
+    while !victory(current_state.win()){
         let current_player = current_state.player;
         let possible_moves = state.legal_moves(current_player);
         if possible_moves.len() < 1{
             break;
         }
-        let random_number = rng.gen::<usize>() % possible_moves.len();
-        let random_move = possible_moves[random_number];
+        let random_move = choose_random(&possible_moves);
         current_state = current_state.place(&random_move);
     }
 
@@ -97,22 +91,19 @@ pub fn tree_search(root : game_state::GameState) -> game_state::Move{
     let mut statistics : HashMap<game_state::GameState, UCTData> = HashMap::new();
     statistics.insert(root, UCTData::new(0f64, 0));
 
-    let mut rng = rand::thread_rng();
-    //get possible child states
-
     //temp
     for i in 0..6000{
         let current_state = root;
 
         //selection
-        let selected_state = tree_policy(&mut rng, &current_state, &visited_states, &statistics);
+        let selected_state = tree_policy(&current_state, &visited_states, &statistics);
 
         //expand
         statistics.insert(selected_state.expanded_node, UCTData::new(0f64, 0));
         visited_states.insert(selected_state.expanded_node);
 
         //simulate
-        let result = run_simulation(&mut rng, selected_state.expanded_node, root.player);
+        let result = run_simulation(selected_state.expanded_node, root.player);
 
         //backpropogate
         back_propogate(result, &mut statistics, &selected_state.path);
@@ -135,7 +126,6 @@ pub fn tree_search(root : game_state::GameState) -> game_state::Move{
 
 
 pub fn tree_policy(
-    trng : &mut rand::ThreadRng,
     current_state : &game_state::GameState,
     visisted_states : &HashSet<game_state::GameState>,
     stats : &HashMap<game_state::GameState, UCTData>
@@ -150,7 +140,7 @@ pub fn tree_policy(
 
         path.push(current_node);
 
-        let mut possible_moves = current_node.legal_moves(current_node.player);
+        let possible_moves = current_node.legal_moves(current_node.player);
 
         if possible_moves.len() < 1{
             //no legal moves
@@ -179,15 +169,15 @@ pub fn tree_policy(
         else{
             //sort 
             let mut best_move = possible_moves.last().unwrap();
-            let mut best_UCT = 0f64;
+            let mut best_uct = 0f64;
             let total_played = stats.get(&current_node).unwrap().num_plays;
             for possibility in possible_moves.iter(){
                 
                 //TODO: switch to pattern matching
                 let data = stats.get(&current_node.place(&possibility)).unwrap();
                 let uct = ucb1(data.wins, data.num_plays as f64, total_played as f64);
-                if(uct > best_UCT){
-                    best_UCT = uct;
+                if(uct > best_uct){
+                    best_uct = uct;
                     best_move = possibility;
                 }
             }
