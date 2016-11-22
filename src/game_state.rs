@@ -124,7 +124,7 @@ impl GameState{
 
     fn color_win(&self, color : Color) -> bool{
 
-        if self.linear_match(0, 0, 1, 1, Color::White) || self.linear_match(2, 0, -1, 1, color){
+        if self.linear_match(0, 0, 1, 1, color) || self.linear_match(2, 0, -1, 1, color){
             return true;
         }
 
