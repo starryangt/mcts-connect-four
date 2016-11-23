@@ -130,8 +130,8 @@ impl GameState{
     }
 
     fn color_win(&self, color : Color) -> bool{
-        for x in 0..BOARD_HEIGHT{
-            for y in 0..BOARD_WIDTH{
+        for x in 0..BOARD_HEIGHT + 1{
+            for y in 0..BOARD_WIDTH + 1{
                 if self.is_line_start(y as i32, x as i32, color){
                     return true;
                 }
