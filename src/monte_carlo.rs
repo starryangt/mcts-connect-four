@@ -132,7 +132,7 @@ pub fn tree_search(root : game_state::GameState) -> game_state::Move{
 
     let current_time = time::precise_time_s();
     //temp
-    while time::precise_time_s() - current_time < 0.5f64{
+    while time::precise_time_s() - current_time < 3.5f64{
         let current_state = root;
 
         //selection

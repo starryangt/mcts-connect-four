@@ -50,7 +50,6 @@ impl Move{
 
 fn push_back(item : Color, column : &mut [Color; 6]) -> usize{
     for i in (0..column.len()).rev(){
-        println!("{:?}", column[i]);
         if (column[i] == Color::Empty){
             return i;
         }
@@ -69,7 +68,6 @@ impl GameState{
     pub fn place(&self, game_move : &Move) -> Self{
         let mut copy = self.clone();
         if !self.legal(&game_move){
-            println!("Not legal");
             return copy;
         }
 
@@ -181,6 +179,8 @@ impl GameState{
             }
             string.push_str("\n");
         }
+        string.push_str("|1||2||3||4||5||6||7|");
+        
         return string;
     }
 }
